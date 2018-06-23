@@ -10,13 +10,26 @@ function throttle(fn, delay) {
   }
 } 
 
-const velocity = function (curr, prev) {
+const getVelocity = function(curr, prev) {
   const diffTime = curr.time - prev.time
   const diffPx = curr.px - prev.px
-  return `${diffPx * 1000 / diffTime} px/s`
+  return diffPx * 1000 / diffTime
+}
+
+const isMaxVelocity = function(curr, prev) {
+  const mark = getVelocity(curr, prev)
+  velocity.prev = velocity.curr
+  velocity.curr = mark
+  if (Math.abs(velocity.curr) <= Math.abs(velocity.prev)) {
+    return velocity.prev
+  }
+  return false
+
 }
 
 // =====================
+
+let scrollTimeout = null
 
 const scrollPos = {
   prev: {
@@ -29,19 +42,52 @@ const scrollPos = {
   }
 }
 
+const velocity = {
+  prev: 0,
+  curr: 0,
+  max: null,
+}
+
 const viewer = document.querySelector('.viewer')
 for (let i = 0; i < 20; i++) {
   viewer.appendChild(document.createElement('hr'))
 }
 
-const reportScrollDiff = () => {
+const onScrollEnd = () => {
+  velocity.prev = 0
+  velocity.curr = 0
+  velocity.max = 0
+
+  scrollPos.prev = {
+    px: 0,
+    time: null,
+  }
+  scrollPos.curr = {
+    px: 0,
+    time: null,
+  }
+}
+
+const reportScrollDiff = endDelay => {
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+    scrollTimeout = null
+  }
+  scrollTimeout = setTimeout(onScrollEnd, endDelay)
+
+  if (velocity.max) {
+    return
+  }
   const now = performance.now()
   scrollPos.prev = scrollPos.curr
   scrollPos.curr = {
     px: document.scrollingElement.scrollTop,
     time: now,
   }
-  console.log(velocity(scrollPos.curr, scrollPos.prev))
+  velocity.max = isMaxVelocity(scrollPos.curr, scrollPos.prev,)
+  if (velocity.max) {
+    console.log(`${velocity.max} px/s`)
+  }
 }
 
-window.addEventListener('scroll', throttle(reportScrollDiff, 10))
+window.addEventListener('scroll', reportScrollDiff.bind(this, 50))
