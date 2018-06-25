@@ -69,6 +69,8 @@ const onScrollEnd = () => {
 }
 
 const reportScrollDiff = endDelay => {
+  event.preventDefault()
+  // console.log(event.deltaY)
   if (scrollTimeout) {
     clearTimeout(scrollTimeout)
     scrollTimeout = null
@@ -81,7 +83,7 @@ const reportScrollDiff = endDelay => {
   const now = performance.now()
   scrollPos.prev = scrollPos.curr
   scrollPos.curr = {
-    px: document.scrollingElement.scrollTop,
+    px: event.deltaY,
     time: now,
   }
   velocity.max = isMaxVelocity(scrollPos.curr, scrollPos.prev,)
@@ -90,4 +92,4 @@ const reportScrollDiff = endDelay => {
   }
 }
 
-window.addEventListener('scroll', reportScrollDiff.bind(this, 50))
+document.addEventListener('wheel', reportScrollDiff.bind(this, 50))
